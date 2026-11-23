@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Paallijst Huize Kleineberg</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f5b301}a:hover{color:#ffd35c}
+.app{width:1280px;height:768px;box-sizing:border-box;display:flex;flex-direction:column;background:#15171c;color:#f4f1ea;font-family:Inter,system-ui,sans-serif;position:relative;overflow:hidden}
+.top{height:76px;flex-shrink:0;display:flex;align-items:center;gap:12px;padding:0 24px;background:#1c1f26;border-bottom:1px solid #2c313b;box-sizing:border-box}
+.brand{display:flex;flex-direction:column;gap:2px;flex-grow:1}
+.brand b{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700}
+.brand span{font-size:13px;color:#a7adb8}
+.prod{display:flex;align-items:center;gap:6px;padding:6px 14px 6px 6px;border-radius:12px;background:#262a33;border:1px solid #363c48}
+.pbtn{min-height:44px;min-width:72px;padding:0 14px;border-radius:9px;border:1px solid transparent;background:transparent;color:#d9dde4;font:700 16px Inter,sans-serif;cursor:pointer}
+.pbtn.on{background:#f5b301;color:#1a1400}
+.prod .s{font-size:15px;color:#d9dde4;margin-left:8px;padding-left:12px;border-left:1px solid #3b4250;min-height:32px;display:flex;align-items:center}
+.prod .s.low{color:#ff8a65;font-weight:700}
+.btn{min-height:52px;padding:0 18px;border-radius:12px;border:1px solid #363c48;background:#262a33;color:#f4f1ea;font:600 16px Inter,system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;box-sizing:border-box}
+.btn:disabled{opacity:.4;cursor:default}
+.btn-primary{background:#f5b301;border-color:#f5b301;color:#1a1400}
+.btn-big{min-height:64px;font-size:20px;flex-grow:1}
+.btn-danger{background:#3a2420;border-color:#6b3a2f;color:#ffb4a1}
+.body{flex-grow:1;display:flex;min-height:0}
+.names{flex-grow:1;padding:24px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:128px;gap:16px;align-content:start;overflow:auto}
+.tile{border-radius:16px;border:2px solid #2f3440;background:#232730;color:#f4f1ea;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;padding:16px 18px;cursor:pointer;font-family:inherit;text-align:left;box-sizing:border-box}
+.tile.on{border-color:#f5b301;background:#2c2614}
+.tile .hd{display:flex;width:100%;justify-content:space-between;align-items:center}
+.tile .nm{font:700 26px 'Space Grotesk',sans-serif}
+.tile .sub{font-size:14px;color:#a7adb8}
+.badge{background:#f5b301;color:#1a1400;border-radius:999px;padding:2px 12px;font-weight:700;font-size:16px}
+.side{width:384px;flex-shrink:0;background:#1c1f26;border-left:1px solid #2c313b;display:flex;flex-direction:column;padding:20px;box-sizing:border-box;gap:12px}
+.side h2{margin:0;font:700 22px 'Space Grotesk',sans-serif}
+.hint{font-size:13px;color:#a7adb8;margin:0}
+.rows{flex-grow:1;display:flex;flex-direction:column;gap:8px;overflow:auto}
+.row{display:flex;gap:8px}
+.rowbtn{flex-grow:1;min-height:56px;border-radius:12px;border:1px solid #363c48;background:#262a33;color:#f4f1ea;font:600 18px Inter,sans-serif;display:flex;align-items:center;justify-content:space-between;padding:0 16px;cursor:pointer;gap:10px}
+.rowbtn .pr{font-size:13px;font-weight:700;color:#a7adb8;text-transform:uppercase;letter-spacing:.05em;margin-left:8px}
+.rowbtn .c{font:700 22px 'Space Grotesk',sans-serif;color:#f5b301}
+.krat{min-width:84px;border-radius:12px;border:1px dashed #6a5a26;background:#221e12;color:#f5d27a;font:600 15px Inter,sans-serif;cursor:pointer}
+.nokrat{min-width:84px}
+.empty{flex-grow:1;display:flex;align-items:center;justify-content:center;text-align:center;color:#8f96a3;font-size:15px;border:2px dashed #2c313b;border-radius:14px;padding:20px}
+.total{display:flex;justify-content:space-between;font-size:16px;color:#d9dde4;padding:4px 2px}
+.total b{color:#f4f1ea}
+.toast{position:absolute;left:24px;bottom:24px;width:560px;background:#2a2f3a;border:1px solid #454c5a;border-radius:16px;padding:16px 18px;box-sizing:border-box;display:flex;flex-direction:column;gap:10px;box-shadow:0 12px 32px rgba(0,0,0,.45)}
+.toast .ln{display:flex;align-items:center;gap:14px}
+.toast .tx{flex-grow:1;font-size:17px;font-weight:600}
+.toast .sec{font-size:14px;color:#a7adb8;white-space:nowrap}
+.bar{height:6px;border-radius:3px;background:#3b4250;overflow:hidden}
+.bar div{height:6px;background:#f5b301}
+.page{flex-grow:1;padding:24px 32px;display:flex;flex-direction:column;gap:18px;overflow:auto;box-sizing:border-box;min-height:0}
+.ph{display:flex;align-items:center;gap:16px}
+.ph h1{margin:0;font:700 28px 'Space Grotesk',sans-serif;flex-grow:1}
+.lbl{font-size:14px;color:#a7adb8;margin:0 0 8px 0;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{min-height:52px;min-width:120px;padding:0 18px;border-radius:12px;border:2px solid #2f3440;background:#232730;color:#f4f1ea;font:600 18px Inter,sans-serif;cursor:pointer}
+.chip.on{border-color:#f5b301;background:#2c2614;color:#ffd35c}
+.step{display:flex;align-items:center;gap:12px}
+.step .v{min-width:72px;text-align:center;font:700 32px 'Space Grotesk',sans-serif}
+.step .nm{min-width:80px;font:700 20px 'Space Grotesk',sans-serif}
+.sq{width:56px;height:56px;border-radius:12px;border:1px solid #363c48;background:#262a33;color:#f4f1ea;font:700 26px Inter,sans-serif;cursor:pointer}
+.sum{background:#1f232b;border:1px solid #2c313b;border-radius:14px;padding:16px 18px;font-size:17px;line-height:1.6}
+.sum b{color:#ffd35c}
+.tbl{width:100%;border-collapse:collapse;font-size:17px}
+.tbl th{text-align:left;font-size:13px;color:#a7adb8;text-transform:uppercase;letter-spacing:.05em;padding:10px 12px;border-bottom:1px solid #2c313b;font-weight:600}
+.tbl td{padding:12px;border-bottom:1px solid #252932}
+.tbl td.n{font:700 20px 'Space Grotesk',sans-serif;text-align:right}
+.tbl th.n{text-align:right}
+.tbl tr.tot td{border-top:2px solid #3b4250;font-weight:700;color:#ffd35c}
+.pinwrap{flex-grow:1;display:flex;align-items:center;justify-content:center}
+.pincard{width:380px;background:#1c1f26;border:1px solid #2c313b;border-radius:20px;padding:28px;display:flex;flex-direction:column;align-items:center;gap:18px;box-sizing:border-box}
+.pincard h1{margin:0;font:700 24px 'Space Grotesk',sans-serif}
+.dots{display:flex;gap:16px}
+.dot{width:18px;height:18px;border-radius:50%;border:2px solid #6b7280;box-sizing:border-box}
+.dot.f{background:#f5b301;border-color:#f5b301}
+.err{color:#ff8a65;font-size:15px;margin:0;font-weight:600}
+.keys{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:100%}
+.key{height:64px;border-radius:14px;border:1px solid #363c48;background:#262a33;color:#f4f1ea;font:600 24px Inter,sans-serif;cursor:pointer}
+.set{flex-grow:1;display:flex;min-height:0}
+.nav{width:250px;flex-shrink:0;background:#1c1f26;border-right:1px solid #2c313b;padding:16px 12px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box}
+.navb{min-height:48px;text-align:left;padding:0 14px;border-radius:10px;border:0;background:transparent;color:#d9dde4;font:600 16px Inter,sans-serif;cursor:pointer}
+.navb.on{background:#2c2614;color:#ffd35c}
+.tag{display:inline-block;font-size:12px;font-weight:700;border-radius:6px;padding:3px 8px;margin-left:8px;vertical-align:middle}
+.tag.h{background:#2c2614;color:#ffd35c}
+.tag.x{background:#3a2420;color:#ffb4a1}
+.tag.c{background:#20283a;color:#9ec3ff}
+.tag.d{background:#1f3326;color:#9be0b0}
+.smallbtn{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid #363c48;background:#262a33;color:#f4f1ea;font:600 14px Inter,sans-serif;cursor:pointer}
+.mail{background:#f4f1ea;color:#1b1d22;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.55}
+.mail .m{color:#555b66;font-size:13px}
+.ok{background:#1f3326;border:1px solid #2f5a3c;color:#c4f0d0;border-radius:12px;padding:14px 16px;font-size:16px}
+.field{display:flex;flex-direction:column;gap:6px;font-size:14px;color:#a7adb8}
+.field div{background:#262a33;border:1px solid #363c48;border-radius:10px;padding:12px 14px;color:#f4f1ea;font-size:16px}
+</style>
+</helmet>
+<div class="app">
+
+<div class="top">
+<div class="brand"><b>Huize Kleineberg</b><span>Paallijst · periode sinds 1 nov 2026</span></div>
+<sc-if value="{{isMain}}" hint-placeholder-val="{{ true }}">
+<div class="prod">
+<sc-for list="{{prodBtns}}" as="pb" hint-placeholder-count="2"><button class="pbtn {{pb.cls}}" onClick="{{pb.pick}}">{{pb.name}}</button></sc-for>
+<span class="s {{stockCls}}">{{stockText}}</span>
+</div>
+<button class="btn" onClick="{{goOverzicht}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg>Overzicht</button>
+<button class="btn" onClick="{{goKrat}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M3 12h18M8 7V4h8v3"></path></svg>Krat bijzetten</button>
+<button class="btn" onClick="{{goPin}}" aria-label="Instellingen"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>Instellingen</button>
+</sc-if>
+<sc-if value="{{notMain}}" hint-placeholder-val="{{ false }}">
+<button class="btn btn-primary" onClick="{{goMain}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>{{backLabel}}</button>
+</sc-if>
+</div>
+
+<sc-if value="{{isMain}}" hint-placeholder-val="{{ true }}">
+<div class="body">
+<div class="names">
+<sc-for list="{{tiles}}" as="t" hint-placeholder-count="8">
+<button class="tile {{t.cls}}" onClick="{{t.add}}">
+<div class="hd"><span class="nm">{{t.name}}</span><sc-if value="{{t.inList}}" hint-placeholder-val="{{ false }}"><span class="badge">+{{t.n}}</span></sc-if></div>
+<span class="sub">{{t.sub}}</span>
+</button>
+</sc-for>
+</div>
+<div class="side">
+<h2>Bestellijst</h2>
+<p class="hint">Tik op een naam voor +1 {{prodName}}. Tik hier op een regel voor −1.</p>
+<sc-if value="{{noOrder}}" hint-placeholder-val="{{ true }}">
+<div class="empty">Nog niets gekozen.<br>Kies bovenin het product en tik links op wie er iets pakt.</div>
+</sc-if>
+<sc-if value="{{hasOrder}}" hint-placeholder-val="{{ false }}">
+<div class="rows">
+<sc-for list="{{orderRows}}" as="o" hint-placeholder-count="3">
+<div class="row">
+<button class="rowbtn" onClick="{{o.minus}}" aria-label="Eén {{o.prod}} minder voor {{o.name}}"><span>{{o.name}}<span class="pr">{{o.prod}}</span></span><span class="c">{{o.n}}</span></button>
+<sc-if value="{{o.hasKrat}}" hint-placeholder-val="{{ true }}"><button class="krat" onClick="{{o.krat}}">+krat<br>(24)</button></sc-if>
+<sc-if value="{{o.noKrat}}" hint-placeholder-val="{{ false }}"><span class="nokrat"></span></sc-if>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<div class="total"><span>Totaal</span><b>{{orderTotalText}}</b></div>
+<div class="row">
+<button class="btn" onClick="{{clearOrder}}" disabled="{{noOrder}}">Wissen</button>
+<button class="btn btn-primary btn-big" onClick="{{commit}}" disabled="{{noOrder}}">Doorvoeren</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isKrat}}" hint-placeholder-val="{{ false }}">
+<div class="page">
+<div class="ph"><h1>Krat pils bijzetten voor het huis</h1></div>
+<div><p class="lbl">Wie doneert?</p>
+<div class="chips"><sc-for list="{{donorChips}}" as="c" hint-placeholder-count="8"><button class="chip {{c.cls}}" onClick="{{c.pick}}">{{c.name}}</button></sc-for></div></div>
+<div><p class="lbl">Aantal kratten</p>
+<div class="step"><button class="sq" onClick="{{kratDec}}" aria-label="Minder">−</button><span class="v">{{kratAantal}}</span><button class="sq" onClick="{{kratInc}}" aria-label="Meer">+</button></div></div>
+<div class="sum">{{kratSummary}}</div>
+<div class="row" style="max-width: 560px"><button class="btn" onClick="{{goMain}}">Annuleren</button><button class="btn btn-primary btn-big" onClick="{{donate}}" disabled="{{noDonor}}">Bijzetten</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{isOverzicht}}" hint-placeholder-val="{{ false }}">
+<div class="page">
+<div class="ph"><h1>Overzicht</h1><span class="hint">Periode 1 nov 2026 – nu · alleen lezen</span></div>
+<table class="tbl">
+<thead><tr><th>Bewoner</th><sc-for list="{{ovHeads}}" as="h" hint-placeholder-count="4"><th class="n">{{h.label}}</th></sc-for><th class="n">Kratten gedoneerd</th><th class="n">Statiegeld (kratten)</th></tr></thead>
+<tbody>
+<sc-for list="{{ovRows}}" as="r" hint-placeholder-count="8">
+<tr><td>{{r.name}}<sc-if value="{{r.leaving}}" hint-placeholder-val="{{ false }}"><span class="tag x">vertrekt</span></sc-if></td><sc-for list="{{r.cells}}" as="c" hint-placeholder-count="4"><td class="n">{{c.v}}</td></sc-for><td class="n">{{r.kratDon}}</td><td class="n">{{r.sg}}</td></tr>
+</sc-for>
+<tr class="tot"><td>Totaal</td><sc-for list="{{tot.cells}}" as="c" hint-placeholder-count="4"><td class="n">{{c.v}}</td></sc-for><td class="n">{{tot.kratDon}}</td><td class="n">{{tot.sg}}</td></tr>
+</tbody>
+</table>
+</div>
+</sc-if>
+
+<sc-if value="{{isPin}}" hint-placeholder-val="{{ false }}">
+<div class="pinwrap">
+<div class="pincard">
+<h1>Pincode</h1>
+<p class="hint">Instellingen zijn beveiligd. Demo-pincode: 1234</p>
+<div class="dots"><sc-for list="{{dots}}" as="d" hint-placeholder-count="4"><span class="dot {{d.cls}}"></span></sc-for></div>
+<sc-if value="{{pinError}}" hint-placeholder-val="{{ false }}"><p class="err">Onjuiste pincode</p></sc-if>
+<div class="keys"><sc-for list="{{keys}}" as="k" hint-placeholder-count="12"><button class="key" onClick="{{k.press}}">{{k.label}}</button></sc-for></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{isSettings}}" hint-placeholder-val="{{ false }}">
+<div class="set">
+<div class="nav">
+<sc-for list="{{tabs}}" as="tb" hint-placeholder-count="8"><button class="navb {{tb.cls}}" onClick="{{tb.pick}}">{{tb.label}}</button></sc-for>
+</div>
+<div class="page">
+
+<sc-if value="{{tabBewoners}}" hint-placeholder-val="{{ true }}">
+<div class="ph"><h1>Bewoners</h1><button class="btn btn-primary" onClick="{{addResident}}">+ Bewoner toevoegen</button></div>
+<table class="tbl">
+<thead><tr><th>Naam</th><th>Mailadres</th><th>Hoofdbewoner</th><th>Acties</th></tr></thead>
+<tbody>
+<sc-for list="{{resRows}}" as="r" hint-placeholder-count="8">
+<tr><td>{{r.name}}<sc-if value="{{r.hoofd}}" hint-placeholder-val="{{ false }}"><span class="tag h">hoofdbewoner</span></sc-if><sc-if value="{{r.leaving}}" hint-placeholder-val="{{ false }}"><span class="tag x">weg na afsluiten</span></sc-if></td>
+<td>{{r.email}}</td>
+<td><button class="smallbtn" onClick="{{r.toggle}}">{{r.hoofdLabel}}</button></td>
+<td><button class="smallbtn" onClick="{{r.remove}}">{{r.removeLabel}}</button></td></tr>
+</sc-for>
+</tbody>
+</table>
+<p class="hint">Verwijderde bewoners met streepjes blijven tot het afsluiten in de periode staan en verdwijnen daarna.</p>
+</sc-if>
+
+<sc-if value="{{tabProducten}}" hint-placeholder-val="{{ false }}">
+<div class="ph"><h1>Producten</h1><button class="btn btn-primary">+ Product toevoegen</button></div>
+<table class="tbl">
+<thead><tr><th>Product</th><th>Standaard</th><th>Krat-knop (+24)</th><th>Doneren aan huis</th><th class="n">Voorraad</th></tr></thead>
+<tbody>
+<sc-for list="{{prodRows}}" as="p" hint-placeholder-count="2">
+<tr><td>{{p.name}}</td><td>{{p.def}}</td><td>{{p.krat}}</td><td>{{p.don}}</td><td class="n">{{p.stock}}</td></tr>
+</sc-for>
+</tbody>
+</table>
+<p class="hint">Het standaardproduct staat bij het openen en na elke boeking geselecteerd. De andere producten staan ernaast in de productkeuze.</p>
+</sc-if>
+
+<sc-if value="{{tabVoorraad}}" hint-placeholder-val="{{ false }}">
+<div class="ph"><h1>Voorraad aanpassen</h1></div>
+<p class="hint">Tel wat er in huis is en zet het hier goed. Elke wijziging komt in het logboek.</p>
+<sc-for list="{{stockRows}}" as="sr" hint-placeholder-count="2">
+<div class="step"><span class="nm">{{sr.name}}</span><button class="sq" onClick="{{sr.dec}}" aria-label="Minder {{sr.name}}">−</button><span class="v">{{sr.draft}}</span><button class="sq" onClick="{{sr.inc}}" aria-label="Meer {{sr.name}}">+</button><sc-if value="{{sr.hasKrat}}" hint-placeholder-val="{{ false }}"><button class="smallbtn" onClick="{{sr.plus24}}">+24 (krat)</button></sc-if><span class="hint">nu {{sr.stock}}</span></div>
+</sc-for>
+<div class="row" style="max-width: 320px"><button class="btn btn-primary btn-big" onClick="{{saveStock}}">Opslaan</button></div>
+</sc-if>
+
+<sc-if value="{{tabStatiegeld}}" hint-placeholder-val="{{ false }}">
+<div class="ph"><h1>Statiegeld terugboeken</h1></div>
+<p class="hint">Wie heeft de lege kratten weggebracht? Het geld komt op zijn of haar rekening, dus het wordt op die persoon geboekt en later verrekend.</p>
+<div><p class="lbl">Weggebracht door</p><div class="chips"><sc-for list="{{sgChips}}" as="c" hint-placeholder-count="8"><button class="chip {{c.cls}}" onClick="{{c.pick}}">{{c.name}}</button></sc-for></div></div>
+<div><p class="lbl">Aantal lege kratten</p><div class="step"><button class="sq" onClick="{{sgDec}}" aria-label="Minder">−</button><span class="v">{{sgAantal}}</span><button class="sq" onClick="{{sgInc}}" aria-label="Meer">+</button></div></div>
+<div class="sum">{{sgSummary}}</div>
+<div class="row" style="max-width: 320px"><button class="btn btn-primary btn-big" onClick="{{bookSg}}">Boeken</button></div>
+</sc-if>
+
+<sc-if value="{{tabCorrecties}}" hint-placeholder-val="{{ false }}">
+<div class="ph"><h1>Correctie achteraf</h1></div>
+<div><p class="lbl">Bewoner</p><div class="chips"><sc-for list="{{corrChips}}" as="c" hint-placeholder-count="8"><button class="chip {{c.cls}}" onClick="{{c.pick}}">{{c.name}}</button></sc-for></div></div>
+<div><p class="lbl">Product</p><div class="chips"><sc-for list="{{corrProdChips}}" as="c" hint-placeholder-count="2"><button class="chip {{c.cls}}" onClick="{{c.pick}}">{{c.name}}</button></sc-for></div></div>
+<div><p class="lbl">Erbij of eraf</p><div class="step"><button class="sq" onClick="{{corrDec}}" aria-label="Minder">−</button><span class="v">{{corrDeltaText}}</span><button class="sq" onClick="{{corrInc}}" aria-label="Meer">+</button></div></div>
+<div class="sum">{{corrSummary}}</div>
+<div class="row" style="max-width: 320px"><button class="btn btn-primary btn-big" onClick="{{bookCorr}}">Correctie boeken</button></div>
+</sc-if>
+
+<sc-if value="{{tabLogboek}}" hint-placeholder-val="{{ false }}">
+<div class="ph"><h1>Logboek</h1><span class="hint">Elke handeling, nieuwste bovenaan</span></div>
+<table class="tbl">
+<thead><tr><th style="width: 190px">Tijd</th><th>Handeling</th></tr></thead>
+<tbody>
+<sc-for list="{{logRows}}" as="l" hint-placeholder-count="5">
+<tr><td>{{l.t}}</td><td>{{l.text}}<sc-if value="{{l.isCorr}}" hint-placeholder-val="{{ false }}"><span class="tag c">correctie</span></sc-if><sc-if value="{{l.isDon}}" hint-placeholder-val="{{ false }}"><span class="tag d">donatie</span></sc-if></td></tr>
+</sc-for>
+</tbody>
+</table>
+</sc-if>
+
+<sc-if value="{{tabAfsluiten}}" hint-placeholder-val="{{ false }}">
+<div class="ph"><h1>Periode afsluiten en mailen</h1></div>
+<sc-if value="{{mailSent}}" hint-placeholder-val="{{ false }}"><div class="ok">{{mailSentText}}</div></sc-if>
+<div><p class="lbl">Versturen naar (hoofdbewoners)</p><div class="chips"><sc-for list="{{mailChips}}" as="c" hint-placeholder-count="2"><button class="chip {{c.cls}}" onClick="{{c.pick}}">{{c.label}}</button></sc-for></div></div>
+<div class="mail">
+<div class="m">Van: paallijst-huis@gmail.com · Aan: {{mailToEmail}}</div>
+<div class="m">Onderwerp: Paallijst Huize Kleineberg – 1 nov t/m 23 nov 2026</div>
+<div class="m">Bijlage: paallijst_2026-11-23.csv</div>
+<br>
+<sc-for list="{{mailLines}}" as="ml" hint-placeholder-count="8"><div>{{ml.text}}</div></sc-for>
+</div>
+<div class="row" style="max-width: 520px"><button class="btn btn-danger btn-big" onClick="{{sendMail}}">Afsluiten, mailen en op 0 zetten</button></div>
+</sc-if>
+
+<sc-if value="{{tabPincode}}" hint-placeholder-val="{{ false }}">
+<div class="ph"><h1>Pincode en koppeling</h1></div>
+<div class="field">Pincode<div>••••  <button class="smallbtn">Wijzigen</button></div></div>
+<div class="field">Google Apps Script-koppeling (huisaccount)<div>Verbonden · laatste sync 1 minuut geleden · 0 in wachtrij</div></div>
+<div class="field">Back-up Google Sheet<div>“Paallijst Kleineberg” in het huis-Gmailaccount</div></div>
+</sc-if>
+
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}">
+<div class="toast">
+<div class="ln"><span class="tx">{{toastText}}</span><span class="sec">nog {{toastSecs}} s</span><button class="btn btn-primary" onClick="{{undo}}">Ongedaan maken</button></div>
+<div class="bar"><div style="width: {{toastPct}}%"></div></div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":768}}'>
+var PRODUCTS = [
+  {id:'pils', name:'Pils', krat:true, don:true},
+  {id:'wijn', name:'Wijn', krat:false, don:false}
+];
+var PEOPLE = [
+  ['joelle','Joelle',false,''],['olaf','Olaf',true,'olaf@voorbeeld.nl'],['tijn','Tijn',false,''],['sanne','Sanne',true,'sanne@voorbeeld.nl'],
+  ['bram','Bram',false,''],['lotte','Lotte',false,''],['daan','Daan',false,''],['femke','Femke',false,'']
+];
+// [pils vandaag, pils periode, wijn vandaag, wijn periode, kratten gedoneerd, statiegeld]
+var START = {joelle:[1,12,1,3,0,0],olaf:[2,18,0,1,1,1],tijn:[0,9,0,0,0,0],sanne:[3,21,0,2,2,1],bram:[0,7,0,0,0,0],lotte:[1,11,2,4,0,0],daan:[0,4,0,0,0,0],femke:[2,15,0,1,1,0]};
+var TABS = [['bewoners','Bewoners'],['producten','Producten'],['voorraad','Voorraad'],['statiegeld','Statiegeld'],['correcties','Correcties'],['logboek','Logboek'],['afsluiten','Afsluiten & mailen'],['pincode','Pincode & koppeling']];
+function nowStr(){ var d=new Date(); return 'ma 23 nov ' + ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2); }
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function kr(n){ return Math.abs(n)===1 ? n+' krat' : n+' kratten'; }
+function prodOf(id){ return PRODUCTS.find(function(p){return p.id===id;}); }
+function emptyCounts(){ var c={kratDon:0,sg:0}; PRODUCTS.forEach(function(p){ c[p.id]={today:0,period:0}; }); return c; }
+function amounts(map){ return PRODUCTS.filter(function(p){return map[p.id];}).map(function(p){ return map[p.id]+' '+p.name.toLowerCase(); }).join(', ') || '0'; }
+
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    var counts = {};
+    Object.keys(START).forEach(function(k){ var s=START[k]; counts[k]={pils:{today:s[0],period:s[1]}, wijn:{today:s[2],period:s[3]}, kratDon:s[4], sg:s[5]}; });
+    this.state = {
+      residents: PEOPLE.map(function(p){ return {id:p[0],name:p[1],hoofd:p[2],email:p[3],leaving:false}; }),
+      counts: counts, stock: {pils:31, wijn:6}, product: 'pils', order: [], screen: 'main', tab: 'bewoners', pin: '', pinError: false,
+      toast: null, donor: null, kratAantal: 1, mailTo: 'olaf', mailSent: false, mailSentText: '',
+      sgPerson: 'tijn', sgAantal: 1, corrPerson: 'olaf', corrProd: 'pils', corrDelta: -1, stockDraft: {pils:31, wijn:6}, extraNo: 1,
+      log: [
+        {t:'ma 23 nov 20:41', text:'Sanne +2 pils, Olaf +1 pils, Lotte +1 wijn', kind:''},
+        {t:'ma 23 nov 19:05', text:'Femke doneert 1 krat pils (+24 voorraad, +1 krat statiegeld)', kind:'don'},
+        {t:'zo 22 nov 23:12', text:'Correctie (pincode): Bram −1 pils', kind:'corr'}
+      ]
+    };
+  }
+  componentDidMount(){
+    var self = this;
+    this.timer = setInterval(function(){
+      var t = self.state.toast; if (!t) return;
+      if (t.secs <= 1) self.setState({toast:null}); else self.setState({toast:Object.assign({}, t, {secs:t.secs-1})});
+    }, 1000);
+  }
+  componentWillUnmount(){ clearInterval(this.timer); }
+  nameOf(id){ var r=this.state.residents.find(function(x){return x.id===id;}); return r ? r.name : id; }
+  addLog(text, kind, extra){ var s={log:[{t:nowStr(),text:text,kind:kind||''}].concat(this.state.log)}; this.setState(Object.assign(s, extra||{})); }
+  addOrder(id, prod, n){
+    var order=this.state.order.slice(); var i=order.findIndex(function(o){return o.id===id && o.prod===prod;});
+    if (i<0) order.push({id:id,prod:prod,n:n}); else order[i]=Object.assign({}, order[i], {n:order[i].n+n});
+    this.setState({order:order});
+  }
+  minusOrder(id, prod){
+    var order=this.state.order.map(function(o){return (o.id===id && o.prod===prod)?Object.assign({},o,{n:o.n-1}):o;}).filter(function(o){return o.n>0;});
+    this.setState({order:order});
+  }
+  commit(){
+    var s=this.state, self=this; if (!s.order.length) return;
+    var snap={counts:clone(s.counts),stock:clone(s.stock)};
+    var counts=clone(s.counts), stock=clone(s.stock);
+    var parts=s.order.map(function(o){ counts[o.id][o.prod].today+=o.n; counts[o.id][o.prod].period+=o.n; stock[o.prod]-=o.n;
+      return self.nameOf(o.id)+' +'+o.n+' '+prodOf(o.prod).name.toLowerCase(); });
+    this.addLog(parts.join(', '), '', {counts:counts, stock:stock, order:[], product:'pils', toast:{text:'Geboekt: '+parts.join(', '), secs:15, snap:snap}});
+  }
+  undo(){
+    var t=this.state.toast; if (!t) return;
+    this.addLog('Ongedaan gemaakt: '+t.text.replace('Geboekt: ','').replace('Bijgezet: ',''), 'corr', {counts:t.snap.counts, stock:t.snap.stock, toast:null});
+  }
+  donate(){
+    var s=this.state; if (!s.donor) return; var n=s.kratAantal;
+    var counts=clone(s.counts); counts[s.donor].kratDon+=n; counts[s.donor].sg+=n;
+    var stock=clone(s.stock); stock.pils+=24*n;
+    var who=this.nameOf(s.donor);
+    this.addLog(who+' doneert '+kr(n)+' pils (+'+(24*n)+' voorraad, +'+kr(n)+' statiegeld)', 'don',
+      {counts:counts, stock:stock, screen:'main', donor:null, kratAantal:1,
+       toast:{text:'Bijgezet: '+kr(n)+' pils door '+who, secs:15, snap:{counts:clone(s.counts),stock:clone(s.stock)}}});
+  }
+  pressKey(k){
+    var s=this.state;
+    if (k==='×'){ this.setState({screen:'main',pin:'',pinError:false}); return; }
+    if (k==='Wis'){ this.setState({pin:s.pin.slice(0,-1),pinError:false}); return; }
+    var pin=s.pin+k;
+    if (pin.length>=4){
+      if (pin==='1234') this.setState({pin:'',pinError:false,screen:'instellingen',tab:'bewoners',stockDraft:clone(s.stock),mailSent:false});
+      else this.setState({pin:'',pinError:true});
+    } else this.setState({pin:pin,pinError:false});
+  }
+  renderVals(){
+    var s=this.state, self=this;
+    var active=s.residents.filter(function(r){return !r.leaving;});
+    var cur=prodOf(s.product);
+    var orderMap={}; s.order.forEach(function(o){ orderMap[o.id]=(orderMap[o.id]||0)+o.n; });
+    var orderSum={}; s.order.forEach(function(o){ orderSum[o.prod]=(orderSum[o.prod]||0)+o.n; });
+    function go(screen){ return function(){ self.setState({screen:screen, pin:'', pinError:false, order:[], product:'pils'}); }; }
+    function chips(sel, key){ return active.map(function(r){ return {name:r.name, cls:r.id===sel?'on':'', pick:function(){ var u={}; u[key]=r.id; self.setState(u); }}; }); }
+    var tot={kratDon:0,sg:0,cells:[]}; var totMap={};
+    PRODUCTS.forEach(function(p){ totMap[p.id]={today:0,period:0}; });
+    var ovRows=s.residents.map(function(r){ var c=s.counts[r.id]; var cells=[];
+      PRODUCTS.forEach(function(p){ cells.push({v:c[p.id].today},{v:c[p.id].period}); totMap[p.id].today+=c[p.id].today; totMap[p.id].period+=c[p.id].period; });
+      tot.kratDon+=c.kratDon; tot.sg+=c.sg;
+      return {name:r.name, leaving:r.leaving, cells:cells, kratDon:c.kratDon, sg:c.sg}; });
+    PRODUCTS.forEach(function(p){ tot.cells.push({v:totMap[p.id].today},{v:totMap[p.id].period}); });
+    var ovHeads=[]; PRODUCTS.forEach(function(p){ ovHeads.push({label:p.name+' vandaag'},{label:p.name+' periode'}); });
+    var hoofden=s.residents.filter(function(r){return r.hoofd && r.email;});
+    var mailTo=hoofden.find(function(r){return r.id===s.mailTo;}) || hoofden[0];
+    var mailLines=[{text:'Stand paallijst per bewoner deze periode:'}].concat(s.residents.map(function(r){ var c=s.counts[r.id];
+      var per={}; PRODUCTS.forEach(function(p){ per[p.id]=c[p.id].period; });
+      return {text: r.name+': '+amounts(per)+' · '+kr(c.kratDon)+' gedoneerd · statiegeld '+(c.sg>0?'+':'')+kr(c.sg)}; }));
+    var totPer={}; PRODUCTS.forEach(function(p){ totPer[p.id]=totMap[p.id].period; });
+    mailLines.push({text:'Totaal: '+amounts(totPer)+' · voorraad nu '+PRODUCTS.map(function(p){return s.stock[p.id]+' '+p.name.toLowerCase();}).join(', ')});
+    var dn=s.donor?self.nameOf(s.donor):null, n=s.kratAantal;
+    var cn=self.nameOf(s.corrPerson), cd=s.corrDelta, cp=prodOf(s.corrProd);
+    return {
+      isMain:s.screen==='main', notMain:s.screen!=='main', isKrat:s.screen==='krat', isOverzicht:s.screen==='overzicht',
+      isPin:s.screen==='pin', isSettings:s.screen==='instellingen',
+      backLabel: s.screen==='instellingen' ? 'Vergrendelen' : 'Terug',
+      goMain:go('main'), goOverzicht:go('overzicht'), goKrat:go('krat'), goPin:go('pin'),
+      prodBtns: PRODUCTS.map(function(p){ return {name:p.name, cls:p.id===s.product?'on':'', pick:function(){ self.setState({product:p.id}); }}; }),
+      prodName: cur.name.toLowerCase(),
+      stockText: s.stock[cur.id]+' '+cur.name.toLowerCase()+' op voorraad', stockCls: s.stock[cur.id]<=6?'low':'',
+      tiles: active.map(function(r){ var k=orderMap[r.id]||0; var c=s.counts[r.id][cur.id];
+        return {name:r.name, sub:cur.name+': vandaag '+c.today+' · periode '+c.period, inList:k>0, n:k, cls:k>0?'on':'', add:function(){ self.addOrder(r.id, s.product, 1); }}; }),
+      orderRows: s.order.map(function(o){ var p=prodOf(o.prod); return {name:self.nameOf(o.id), prod:p.name, n:o.n, hasKrat:p.krat, noKrat:!p.krat,
+        minus:function(){ self.minusOrder(o.id, o.prod); }, krat:function(){ self.addOrder(o.id, o.prod, 24); }}; }),
+      hasOrder:s.order.length>0, noOrder:s.order.length===0, orderTotalText: amounts(orderSum),
+      clearOrder:function(){ self.setState({order:[]}); }, commit:function(){ self.commit(); },
+      hasToast:!!s.toast, toastText:s.toast?s.toast.text:'', toastSecs:s.toast?s.toast.secs:0, toastPct:s.toast?Math.round(s.toast.secs/15*100):0,
+      undo:function(){ self.undo(); },
+      donorChips:chips(s.donor,'donor'), kratAantal:n, noDonor:!s.donor,
+      kratInc:function(){ self.setState({kratAantal:Math.min(10,n+1)}); }, kratDec:function(){ self.setState({kratAantal:Math.max(1,n-1)}); },
+      kratSummary: dn ? (dn+': +'+kr(n)+' gedoneerd · +'+kr(n)+' statiegeld · voorraad pils +'+(24*n)+' (wordt '+(s.stock.pils+24*n)+')') : 'Kies eerst wie de krat heeft gekocht.',
+      donate:function(){ self.donate(); },
+      ovHeads:ovHeads, ovRows:ovRows, tot:tot,
+      dots:[0,1,2,3].map(function(i){ return {cls:i<s.pin.length?'f':''}; }), pinError:s.pinError,
+      keys:['1','2','3','4','5','6','7','8','9','Wis','0','×'].map(function(k){ return {label:k, press:function(){ self.pressKey(k); }}; }),
+      tabs: TABS.map(function(t){ return {label:t[1], cls:s.tab===t[0]?'on':'', pick:function(){ self.setState({tab:t[0], stockDraft:clone(s.stock), mailSent:false}); }}; }),
+      tabBewoners:s.tab==='bewoners', tabProducten:s.tab==='producten', tabVoorraad:s.tab==='voorraad', tabStatiegeld:s.tab==='statiegeld',
+      tabCorrecties:s.tab==='correcties', tabLogboek:s.tab==='logboek', tabAfsluiten:s.tab==='afsluiten', tabPincode:s.tab==='pincode',
+      resRows: s.residents.map(function(r){ return {name:r.name, hoofd:r.hoofd, leaving:r.leaving, email:r.email||'—',
+        hoofdLabel:r.hoofd?'Ja – uitzetten':'Nee – aanzetten', removeLabel:r.leaving?'Terugzetten':'Verwijderen',
+        toggle:function(){ self.setState({residents:s.residents.map(function(x){ return x.id===r.id?Object.assign({},x,{hoofd:!x.hoofd, email:x.email||(x.id+'@voorbeeld.nl')}):x; })}); },
+        remove:function(){ self.setState({residents:s.residents.map(function(x){ return x.id===r.id?Object.assign({},x,{leaving:!x.leaving}):x; })}); } }; }),
+      addResident:function(){ var id='nieuw'+s.extraNo; var counts=clone(s.counts); counts[id]=emptyCounts();
+        self.addLog('Bewoner toegevoegd: Nieuw '+s.extraNo+' (pincode)','corr',{counts:counts, extraNo:s.extraNo+1, residents:s.residents.concat([{id:id,name:'Nieuw '+s.extraNo,hoofd:false,email:'',leaving:false}])}); },
+      prodRows: PRODUCTS.map(function(p,i){ return {name:p.name, def:i===0?'Ja':'—', krat:p.krat?'Ja':'Nee', don:p.don?'Ja':'Nee', stock:s.stock[p.id]}; }),
+      stockRows: PRODUCTS.map(function(p){ function set(v){ var d=clone(s.stockDraft); d[p.id]=v; self.setState({stockDraft:d}); }
+        return {name:p.name, draft:s.stockDraft[p.id], stock:s.stock[p.id], hasKrat:p.krat,
+          inc:function(){ set(s.stockDraft[p.id]+1); }, dec:function(){ set(s.stockDraft[p.id]-1); }, plus24:function(){ set(s.stockDraft[p.id]+24); }}; }),
+      saveStock:function(){ var ch=PRODUCTS.filter(function(p){return s.stockDraft[p.id]!==s.stock[p.id];});
+        if(!ch.length) return;
+        self.addLog('Voorraad aangepast (pincode): '+ch.map(function(p){return p.name.toLowerCase()+' '+s.stock[p.id]+' → '+s.stockDraft[p.id];}).join(', '),'corr',{stock:clone(s.stockDraft)}); },
+      sgChips:chips(s.sgPerson,'sgPerson'), sgAantal:s.sgAantal,
+      sgInc:function(){ self.setState({sgAantal:s.sgAantal+1}); }, sgDec:function(){ self.setState({sgAantal:Math.max(1,s.sgAantal-1)}); },
+      sgSummary: self.nameOf(s.sgPerson)+' heeft '+kr(s.sgAantal)+' leeg weggebracht en het statiegeld ontvangen → statiegeld −'+kr(s.sgAantal)+' op '+self.nameOf(s.sgPerson)+' (stand wordt '+(s.counts[s.sgPerson].sg-s.sgAantal)+').',
+      bookSg:function(){ var c=clone(s.counts); c[s.sgPerson].sg-=s.sgAantal;
+        self.addLog('Statiegeld terug: '+self.nameOf(s.sgPerson)+' −'+kr(s.sgAantal)+' (geld op rekening '+self.nameOf(s.sgPerson)+', pincode)','corr',{counts:c, sgAantal:1}); },
+      corrChips:chips(s.corrPerson,'corrPerson'),
+      corrProdChips: PRODUCTS.map(function(p){ return {name:p.name, cls:p.id===s.corrProd?'on':'', pick:function(){ self.setState({corrProd:p.id}); }}; }),
+      corrDeltaText:(cd>0?'+':'')+cd,
+      corrInc:function(){ var v=cd+1; if(v===0) v=1; self.setState({corrDelta:v}); }, corrDec:function(){ var v=cd-1; if(v===0) v=-1; self.setState({corrDelta:v}); },
+      corrSummary: cn+': '+(cd>0?'+':'')+cd+' '+cp.name.toLowerCase()+' in deze periode (nu '+s.counts[s.corrPerson][cp.id].period+', wordt '+(s.counts[s.corrPerson][cp.id].period+cd)+'). Voorraad '+cp.name.toLowerCase()+' gaat '+(cd>0?'omlaag':'omhoog')+' met '+Math.abs(cd)+'.',
+      bookCorr:function(){ var c=clone(s.counts); var x=c[s.corrPerson][cp.id]; x.period+=cd; x.today=Math.max(0,x.today+cd);
+        var st=clone(s.stock); st[cp.id]-=cd;
+        self.addLog('Correctie (pincode): '+cn+' '+(cd>0?'+':'−')+Math.abs(cd)+' '+cp.name.toLowerCase(),'corr',{counts:c, stock:st}); },
+      logRows: s.log.map(function(l){ return {t:l.t, text:l.text, isCorr:l.kind==='corr', isDon:l.kind==='don'}; }),
+      mailChips: hoofden.map(function(r){ return {label:r.name+' · '+r.email, cls:mailTo&&r.id===mailTo.id?'on':'', pick:function(){ self.setState({mailTo:r.id}); }}; }),
+      mailToEmail: mailTo ? mailTo.email : '(geen hoofdbewoner met mailadres)', mailLines:mailLines, mailSent:s.mailSent, mailSentText:s.mailSentText,
+      sendMail:function(){ if(!mailTo) return; var c={}; var keep=s.residents.filter(function(r){return !r.leaving;});
+        keep.forEach(function(r){ c[r.id]=emptyCounts(); });
+        self.addLog('Periode afgesloten en gemaild naar '+mailTo.name+' ('+mailTo.email+'), alles op 0','corr',
+          {counts:c, residents:keep, mailSent:true, mailSentText:'Verstuurd naar '+mailTo.email+' met CSV-bijlage. Nieuwe periode gestart, alle tellers staan op 0.'}); }
+    };
+  }
+}
+</script>
+</body>
+</html>

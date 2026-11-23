@@ -80,7 +80,7 @@ Een logboek dat alleen aangroeit. Elke gebeurtenis:
 | `id` | uniek (UUID) |
 | `ts` | tijdstip (ISO) |
 | `periodeId` | lopende periode |
-| `type` | `streep`, `donatie`, `statiegeld_terug`, `correctie`, `voorraad`, `ongedaan`, `bewoner`, `product`, `afsluiting` |
+| `type` | `streep`, `donatie`, `statiegeld_terug`, `correctie`, `voorraad`, `ongedaan`, `bewoner`, `product`, `afsluiting`, `periode_start` |
 | `bewonerId`, `productId` | waar van toepassing |
 | `aantal` | geheel getal (bij `voorraad`: nieuwe absolute stand) |
 | `verwijst` | bij `ongedaan`: id('s) van de teruggedraaide gebeurtenissen |
@@ -89,7 +89,7 @@ Een logboek dat alleen aangroeit. Elke gebeurtenis:
 Eén *Doorvoeren* levert één `streep`-gebeurtenis per regel van de bestellijst, met hetzelfde groepsnummer zodat *Ongedaan maken* de hele groep terugdraait.
 
 ### 6.2 Afgeleide standen
-Tellers, voorraad, statiegeld en "vandaag" worden **altijd berekend** uit de gebeurtenissen van de lopende periode (voorraad: laatste `voorraad`-gebeurtenis plus alles daarna). Er worden geen losse tellers opgeslagen. Overzicht, logboek, mail en CSV gebruiken dezelfde rekenfunctie.
+Tellers, voorraad, statiegeld en "vandaag" worden **altijd berekend** uit de gebeurtenissen van de lopende periode (voorraad: laatste `voorraad`-gebeurtenis plus alles daarna). Elke periode begint met een `periode_start` en per product een `voorraad`-gebeurtenis met de doorlopende stand. Er worden geen losse tellers opgeslagen. Overzicht, logboek, mail en CSV gebruiken dezelfde rekenfunctie.
 
 ### 6.3 Overige opslag
 Bewoners, producten, periodes (`id`, start, eind, gemaild aan) en instellingen (pincode als hash, script-URL, sleutel).
