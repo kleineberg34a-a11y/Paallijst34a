@@ -2,12 +2,12 @@ import * as store from './store.js';
 import { berekenStand, dagStart } from './domain.js';
 import {
   nieuwId, streepEvents, ongedaanEvent, voorraadEvent, periodeStartEvent, donatieEvent,
-  correctieEvent, statiegeldTerugEvent, beheerEvent,
+  correctieEvent, statiegeldTerugEvent, beheerEvent, afsluitingEvent,
 } from './events.js';
 import { voegToe, haalAf } from './bestelling.js';
 import { hashPin, pogingToegestaan, registreerPoging, STANDAARD_PIN } from './pin.js';
 import { stuur, syncWachtrij } from './sync.js';
-import { kratten } from './tekst.js';
+import { kratten, maakCsv, maakMailTekst, bestandsnaam } from './tekst.js';
 import { melding } from './ui/html.js';
 import * as hoofdscherm from './ui/hoofdscherm.js';
 import * as krat from './ui/krat.js';
@@ -85,6 +85,10 @@ async function laad() {
   ctx.data.periodes = periodes;
   ctx.data.periode = periodes[periodes.length - 1];
   ctx.data.events = await store.eventsVanPeriode(ctx.data.periode.id);
+  // Niet-gesyncte gebeurtenissen uit eerdere periodes (bv. de afsluiting) gaan ook mee in de wachtrij.
+  ctx.data.restWachtrij = (await store.alles('events'))
+    .filter((e) => !e.synced && e.periodeId !== ctx.data.periode.id)
+    .sort((a, b) => (a.ts < b.ts ? -1 : 1));
   const inst = {};
   for (const k of INSTELLING_SLEUTELS) inst[k] = await store.instelling(k, null);
   inst.pinGuard ??= { fouten: 0, geblokkeerdTot: 0 };
@@ -102,8 +106,10 @@ function herbereken() {
     producten: ctx.data.producten,
     now: nu(),
   });
-  ctx.data.instellingen.wachtrij = ctx.data.events.filter((e) => !e.synced).length;
+  ctx.data.instellingen.wachtrij = ongesynct().length;
 }
+
+const ongesynct = () => [...(ctx.data.restWachtrij ?? []), ...ctx.data.events].filter((e) => !e.synced);
 
 export async function boek(events) {
   await store.bewaar('events', events);
@@ -120,11 +126,13 @@ export async function probeerSync() {
   if (!scriptUrl || syncBezig) return false;
   syncBezig = true;
   try {
-    const ids = new Set(await syncWachtrij({ events: ctx.data.events, url: scriptUrl, sleutel }));
+    const open = ongesynct();
+    const ids = new Set(await syncWachtrij({ events: open, url: scriptUrl, sleutel }));
     if (ids.size) {
-      const gedaan = ctx.data.events.filter((e) => ids.has(e.id));
+      const gedaan = open.filter((e) => ids.has(e.id));
       for (const e of gedaan) e.synced = true;
       await store.bewaar('events', gedaan);
+      ctx.data.restWachtrij = ctx.data.restWachtrij.filter((e) => !e.synced);
     }
     if (await store.instelling('stamdataVuil', false)) {
       await stuur(scriptUrl, sleutel, 'stamdata', { bewoners: ctx.data.bewoners, producten: ctx.data.producten });
@@ -138,7 +146,7 @@ export async function probeerSync() {
     return false;
   } finally {
     syncBezig = false;
-    ctx.data.instellingen.wachtrij = ctx.data.events.filter((e) => !e.synced).length;
+    ctx.data.instellingen.wachtrij = ongesynct().length;
   }
 }
 
@@ -427,6 +435,88 @@ Object.assign(ACTIES, {
   },
 });
 
+// ---------- afsluiten en herstellen ----------
+
+const offline = () => !ctx.data.instellingen.scriptUrl || navigator.onLine === false;
+
+Object.assign(ACTIES, {
+  kiesOntvanger: ({ bewoner: id }) => { ctx.ui.formulier.ontvanger = id; ctx.ui.formulier.bevestig = false; },
+
+  afsluiten: async () => {
+    const f = ctx.ui.formulier;
+    const inst = ctx.data.instellingen;
+    const hoofden = instellingen.hoofdbewoners(ctx);
+    const ontvanger = hoofden.find((b) => b.id === f.ontvanger) ?? hoofden[0];
+    if (!ontvanger) { toon('Er is geen hoofdbewoner met een mailadres', 'fout'); return; }
+    if (offline()) { f.bevestig = false; toon('Geen verbinding: afsluiten kan alleen met wifi', 'fout', 8); return; }
+    if (!f.bevestig) { f.bevestig = true; return; }
+    f.bevestig = false;
+
+    toon('Bezig met afsluiten…', null, 60);
+    render();
+    if (!(await synchroniseerAlles())) {
+      toon(`Afsluiten mislukt: synchroniseren lukt niet (${inst.syncFout ?? 'onbekende fout'}). Er is niets veranderd.`, 'fout', 10);
+      return;
+    }
+    herbereken();
+    const t = nu();
+    const g = instellingen.afsluitGegevens(ctx, t);
+    const oud = ctx.data.periode;
+    const aan = ontvanger.email;
+    try {
+      await stuur(inst.scriptUrl, inst.sleutel, 'afsluiten', {
+        aan, onderwerp: instellingen.onderwerp(g), tekst: maakMailTekst(g), csv: maakCsv(g),
+        bestandsnaam: bestandsnaam(g.tot), periodeId: oud.id, van: g.van, tot: g.tot,
+      });
+    } catch (err) {
+      toon(`Afsluiten mislukt: ${err?.message ?? err}. Er is niets veranderd.`, 'fout', 10);
+      return;
+    }
+
+    const nieuw = { id: nieuwId('p'), start: t.toISOString() };
+    await store.bewaar('events', [afsluitingEvent(oud.id, { ontvanger: aan, van: g.van, tot: g.tot }, t)]);
+    await store.bewaar('periodes', [nieuw]);
+    await store.bewaar('events', [
+      periodeStartEvent(nieuw.id, t),
+      ...ctx.data.producten.map((p) => voorraadEvent(p.id, g.stand.voorraad[p.id] ?? 0, nieuw.id, t, { overgenomen: true })),
+    ]);
+    await store.bewaar('bewoners', ctx.data.bewoners.filter((b) => b.status === 'vertrekt').map((b) => ({ ...b, status: 'weg' })));
+    await store.zetInstelling('stamdataVuil', true);
+    await laad();
+    ctx.ui.scherm = 'instellingen';
+    ctx.ui.tab = 'afsluiten';
+    const tekst = `Verstuurd naar ${aan} met CSV-bijlage. Nieuwe periode gestart.`;
+    ctx.ui.formulier = { afgesloten: tekst };
+    toon(tekst, 'ok', 10);
+    probeerSync();
+  },
+
+  herstellen: async ({ stap }) => {
+    if (stap !== 'ja') { ctx.ui.formulier.herstelVraag = true; return; }
+    ctx.ui.formulier.herstelVraag = false;
+    if (offline()) { toon('Geen verbinding of geen koppeling: herstellen kan alleen met wifi en een ingevulde script-URL', 'fout', 8); return; }
+    const inst = ctx.data.instellingen;
+    toon('Gegevens ophalen uit de Sheet…', null, 60);
+    render();
+    let r;
+    try {
+      r = await stuur(inst.scriptUrl, inst.sleutel, 'herstel');
+    } catch (err) {
+      toon(`Herstellen mislukt: ${err?.message ?? err}. Er is niets veranderd.`, 'fout', 10);
+      return;
+    }
+    const bewaren = {};
+    for (const k of ['scriptUrl', 'sleutel', 'pinZout', 'pinHash', 'pinIsStandaard']) bewaren[k] = await store.instelling(k, null);
+    await store.wisAlles();
+    for (const [k, v] of Object.entries(bewaren)) if (v !== null) await store.zetInstelling(k, v);
+    await store.bewaar('bewoners', r.bewoners);
+    await store.bewaar('producten', r.producten);
+    await store.bewaar('periodes', [r.periode]);
+    await store.bewaar('events', r.events.map((e) => ({ ...e, synced: true })));
+    location.reload();
+  },
+});
+
 function sgFormulier() {
   return (ctx.ui.formulier.sg ??= { bewoner: null, aantal: 1 });
 }
@@ -440,7 +530,7 @@ async function synchroniseerAlles() {
   for (let i = 0; i < 10; i++) {
     while (syncBezig) await new Promise((r) => setTimeout(r, 200));
     if (!(await probeerSync())) return false;
-    if (!ctx.data.events.some((e) => !e.synced)) return true;
+    if (!ongesynct().length) return true;
   }
   return false;
 }

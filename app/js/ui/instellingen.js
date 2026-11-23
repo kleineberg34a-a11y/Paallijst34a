@@ -1,5 +1,5 @@
 import { esc, knop, bovenbalk, terugKnop, chip } from './html.js';
-import { kratten, tijdLabel, datumLabel, beschrijf } from '../tekst.js';
+import { kratten, tijdLabel, datumLabel, beschrijf, isoDatum, bestandsnaam, maakMailTekst } from '../tekst.js';
 import { KRAT } from '../domain.js';
 
 export const TABS = [
@@ -167,10 +167,41 @@ function logboek(ctx) {
     + `<table class="tbl"><thead><tr><th style="width: 190px">Tijd</th><th>Handeling</th></tr></thead><tbody>${rijen}</tbody></table>`;
 }
 
-// ---------- Afsluiten (taak 9) ----------
+// ---------- Afsluiten ----------
 
-function afsluiten() {
-  return ph('Periode afsluiten en mailen') + '<p class="hint">Volgt.</p>';
+export const hoofdbewoners = (ctx) => ctx.data.bewoners.filter((b) => b.hoofd && b.email && b.status !== 'weg');
+
+export function afsluitGegevens(ctx, nu = new Date()) {
+  const { data, hulp } = ctx;
+  return {
+    bewoners: wieTelt(ctx),
+    producten: hulp.actieveProducten(),
+    stand: data.stand,
+    van: isoDatum(data.periode.start),
+    tot: isoDatum(nu),
+  };
+}
+
+export const onderwerp = (g) => `Paallijst Huize Kleineberg – ${g.van} t/m ${g.tot}`;
+
+function afsluiten(ctx) {
+  const f = ctx.ui.formulier;
+  const hoofden = hoofdbewoners(ctx);
+  const ontvanger = hoofden.find((b) => b.id === f.ontvanger) ?? hoofden[0];
+  const g = afsluitGegevens(ctx);
+  const chips = hoofden.map((b) => chip(`${b.naam} · ${b.email}`, 'kiesOntvanger', { bewoner: b.id }, b.id === ontvanger?.id)).join('')
+    || '<p class="hint">Er is nog geen hoofdbewoner met een mailadres. Stel die in bij Bewoners.</p>';
+  const regels = maakMailTekst(g).split('\n').map((r) => (r ? `<div>${esc(r)}</div>` : '<br>')).join('');
+  const knopTekst = f.bevestig ? 'Zeker weten? Tik nogmaals om af te sluiten' : 'Afsluiten, mailen en op 0 zetten';
+  return ph('Periode afsluiten en mailen')
+    + (f.afgesloten ? `<div class="ok">${esc(f.afgesloten)}</div>` : '')
+    + `<div><p class="lbl">Versturen naar (hoofdbewoners)</p><div class="chips">${chips}</div></div>`
+    + '<div class="mail">'
+    + `<div class="m">Van: het huis-Gmailaccount · Aan: ${esc(ontvanger?.email ?? '(geen hoofdbewoner met mailadres)')}</div>`
+    + `<div class="m">Onderwerp: ${esc(onderwerp(g))}</div>`
+    + `<div class="m">Bijlage: ${esc(bestandsnaam(g.tot))}</div><br>${regels}</div>`
+    + `<div class="row" style="max-width: 520px">${knop(knopTekst, 'afsluiten', { disabled: !ontvanger }, 'btn btn-danger btn-big')}</div>`
+    + '<p class="hint">Afsluiten kan alleen met wifi. Eerst worden alle handelingen naar de Sheet gestuurd; pas als de mail verstuurd is, gaan de tellers op 0. De voorraad loopt door.</p>';
 }
 
 // ---------- Pincode & koppeling ----------
@@ -196,8 +227,11 @@ function pincode(ctx) {
     + '<div class="field">Back-up Google Sheet<div>“Paallijst Kleineberg” in het huis-Gmailaccount</div></div>';
 }
 
-function herstelBlok() {
-  return '';
+function herstelBlok(ctx) {
+  if (!ctx.ui.formulier.herstelVraag) return knop('Herstellen vanuit Sheet', 'herstellen', {}, 'btn btn-danger');
+  return '<div class="sum">Dit vervangt alle gegevens op deze tablet door die uit de Sheet. Doorgaan?'
+    + `<div class="acts" style="margin-top: 10px">${knop('Ja, herstellen', 'herstellen', { stap: 'ja' }, 'btn btn-danger')}`
+    + `${knop('Annuleren', 'kiesTab', { tab: 'pincode' })}</div></div>`;
 }
 
 const TABBLAD = { bewoners, producten, voorraad, statiegeld, correcties, logboek, afsluiten, pincode };
