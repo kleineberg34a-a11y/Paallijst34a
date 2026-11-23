@@ -1,15 +1,19 @@
 import * as store from './store.js';
 import { berekenStand, dagStart } from './domain.js';
-import { nieuwId, streepEvents, ongedaanEvent, voorraadEvent, periodeStartEvent, donatieEvent } from './events.js';
+import {
+  nieuwId, streepEvents, ongedaanEvent, voorraadEvent, periodeStartEvent, donatieEvent,
+  correctieEvent, statiegeldTerugEvent, beheerEvent,
+} from './events.js';
 import { voegToe, haalAf } from './bestelling.js';
 import { hashPin, pogingToegestaan, registreerPoging, STANDAARD_PIN } from './pin.js';
 import { stuur, syncWachtrij } from './sync.js';
 import { kratten } from './tekst.js';
-import { melding, bovenbalk, terugKnop } from './ui/html.js';
+import { melding } from './ui/html.js';
 import * as hoofdscherm from './ui/hoofdscherm.js';
 import * as krat from './ui/krat.js';
 import * as overzicht from './ui/overzicht.js';
 import * as pinScherm from './ui/pin.js';
+import * as instellingen from './ui/instellingen.js';
 
 const MELDING_SEC = 15;
 const STIL_HOOFD_MS = 30000;
@@ -23,7 +27,7 @@ const SCHERMEN = {
   krat,
   overzicht,
   pin: pinScherm,
-  instellingen: { render: (c) => bovenbalk(c, terugKnop('Vergrendelen')) }, // volgt in taak 8
+  instellingen,
 };
 
 // ---------- toestand ----------
@@ -78,6 +82,7 @@ async function laad() {
   ctx.data.bewoners = await store.alles('bewoners');
   ctx.data.producten = await store.alles('producten');
   const periodes = (await store.alles('periodes')).sort((a, b) => (a.start < b.start ? -1 : 1));
+  ctx.data.periodes = periodes;
   ctx.data.periode = periodes[periodes.length - 1];
   ctx.data.events = await store.eventsVanPeriode(ctx.data.periode.id);
   const inst = {};
@@ -231,6 +236,215 @@ function kratFormulier() {
   return (ctx.ui.formulier.krat ??= { donor: null, aantal: 1 });
 }
 
+// ---------- instellingen ----------
+
+const lees = (id) => document.getElementById(id)?.value.trim() ?? '';
+const geldigMail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+const bewoner = (id) => ctx.data.bewoners.find((b) => b.id === id);
+const product = (id) => ctx.data.producten.find((p) => p.id === id);
+
+function vervang(lijst, item) {
+  const i = lijst.findIndex((x) => x.id === item.id);
+  if (i < 0) lijst.push(item); else lijst[i] = item;
+}
+
+async function bewaarBewoner(b, actie) {
+  await store.bewaar('bewoners', [b]);
+  vervang(ctx.data.bewoners, b);
+  await store.zetInstelling('stamdataVuil', true);
+  await boek([beheerEvent('bewoner', { actie, id: b.id, naam: b.naam }, ctx.data.periode.id, nu())]);
+}
+
+async function bewaarProducten(lijst, actie, naam, extraEvents = []) {
+  await store.bewaar('producten', lijst);
+  for (const p of lijst) vervang(ctx.data.producten, p);
+  await store.zetInstelling('stamdataVuil', true);
+  const t = nu();
+  await boek([...extraEvents, beheerEvent('product', { actie, naam }, ctx.data.periode.id, t)]);
+}
+
+function heeftBoekingen(id) {
+  const ongedaan = new Set(ctx.data.events.filter((e) => e.type === 'ongedaan').flatMap((e) => e.verwijst));
+  return ctx.data.events.some((e) => e.bewonerId === id && !ongedaan.has(e.id));
+}
+
+Object.assign(ACTIES, {
+  kiesTab: ({ tab }) => { ctx.ui.tab = tab; ctx.ui.formulier = {}; },
+
+  // bewoners
+  bewonerToevoegen: async () => {
+    const naam = lees('nieuw-naam');
+    const email = lees('nieuw-email');
+    if (!naam) { toon('Vul een naam in', 'fout'); return; }
+    if (email && !geldigMail(email)) { toon('Dat mailadres klopt niet', 'fout'); return; }
+    await bewaarBewoner({ id: nieuwId('b'), naam, hoofd: false, email, status: 'actief' }, 'toegevoegd');
+    toon(`${naam} toegevoegd`, 'ok');
+  },
+  bewonerBewerk: ({ bewoner: id }) => { ctx.ui.formulier.bewerk = id ?? null; },
+  bewonerOpslaan: async ({ bewoner: id }) => {
+    const b = bewoner(id);
+    const naam = lees('bw-naam');
+    const email = lees('bw-email');
+    if (!naam) { toon('Vul een naam in', 'fout'); return; }
+    if (email && !geldigMail(email)) { toon('Dat mailadres klopt niet', 'fout'); return; }
+    if (b.hoofd && !email) { toon('Een hoofdbewoner heeft een mailadres nodig', 'fout'); return; }
+    ctx.ui.formulier.bewerk = null;
+    await bewaarBewoner({ ...b, naam, email }, b.naam === naam ? 'gewijzigd' : `hernoemd (was ${b.naam})`);
+  },
+  bewonerHoofd: async ({ bewoner: id }) => {
+    const b = bewoner(id);
+    if (!b.hoofd && !b.email) { toon('Vul eerst een mailadres in', 'fout'); return; }
+    await bewaarBewoner({ ...b, hoofd: !b.hoofd }, b.hoofd ? 'geen hoofdbewoner meer' : 'is hoofdbewoner');
+  },
+  bewonerVerwijderen: async ({ bewoner: id }) => {
+    const b = bewoner(id);
+    const status = heeftBoekingen(id) ? 'vertrekt' : 'weg';
+    await bewaarBewoner({ ...b, status }, status === 'vertrekt' ? 'vertrekt na afsluiten' : 'verwijderd');
+  },
+  bewonerTerugzetten: async ({ bewoner: id }) => {
+    await bewaarBewoner({ ...bewoner(id), status: 'actief' }, 'teruggezet');
+  },
+
+  // producten
+  productToevoegen: async () => {
+    const naam = lees('nieuw-product');
+    if (!naam) { toon('Vul een naam in', 'fout'); return; }
+    const basis = naam.toLowerCase().replace(/\s+/g, '') || 'product';
+    let id = basis;
+    for (let i = 2; product(id); i++) id = `${basis}${i}`;
+    const volgorde = Math.max(0, ...ctx.data.producten.map((p) => p.volgorde)) + 1;
+    const p = { id, naam, krat: false, doneren: false, standaard: false, actief: true, volgorde };
+    await bewaarProducten([p], 'toegevoegd', naam, [voorraadEvent(id, 0, ctx.data.periode.id, nu())]);
+    toon(`${naam} toegevoegd`, 'ok');
+  },
+  productBewerk: ({ product: id }) => { ctx.ui.formulier.hernoem = id ?? null; },
+  productHernoemen: async ({ product: id }) => {
+    const p = product(id);
+    const naam = lees('pr-naam');
+    if (!naam) { toon('Vul een naam in', 'fout'); return; }
+    ctx.ui.formulier.hernoem = null;
+    if (naam !== p.naam) await bewaarProducten([{ ...p, naam }], `hernoemd (was ${p.naam})`, naam);
+  },
+  productToggle: async ({ product: id, veld }) => {
+    const p = product(id);
+    const aan = !p[veld];
+    if (veld === 'standaard') {
+      if (!aan) { toon('Maak een ander product standaard; er is altijd precies één standaardproduct', 'fout'); return; }
+      const lijst = ctx.data.producten.map((x) => ({ ...x, standaard: x.id === id, actief: x.id === id ? true : x.actief }));
+      await bewaarProducten(lijst, 'is standaard', p.naam);
+      return;
+    }
+    if (veld === 'actief' && !aan && p.standaard) { toon('Het standaardproduct kan niet gedeactiveerd worden', 'fout'); return; }
+    const labels = { krat: 'krat-knop', doneren: 'doneren', actief: 'actief' };
+    await bewaarProducten([{ ...p, [veld]: aan }], `${labels[veld]} ${aan ? 'aan' : 'uit'}`, p.naam);
+  },
+
+  // voorraad
+  voorraadStap: ({ product: id, delta }) => {
+    const c = (ctx.ui.formulier.voorraad ??= {});
+    c[id] = (c[id] ?? ctx.data.stand.voorraad[id] ?? 0) + Number(delta);
+  },
+  voorraadOpslaan: async () => {
+    const c = ctx.ui.formulier.voorraad ?? {};
+    const t = nu();
+    const events = ctx.hulp.actieveProducten()
+      .filter((p) => c[p.id] !== undefined && c[p.id] !== (ctx.data.stand.voorraad[p.id] ?? 0))
+      .map((p) => voorraadEvent(p.id, c[p.id], ctx.data.periode.id, t));
+    ctx.ui.formulier.voorraad = undefined;
+    if (!events.length) { toon('Geen wijzigingen'); return; }
+    await boek(events);
+    toon('Voorraad opgeslagen', 'ok');
+  },
+
+  // statiegeld
+  sgKies: ({ bewoner: id }) => { sgFormulier().bewoner = id; },
+  sgStap: ({ delta }) => { const f = sgFormulier(); f.aantal = Math.max(1, f.aantal + Number(delta)); },
+  statiegeldBoeken: async () => {
+    const f = sgFormulier();
+    if (!f.bewoner) return;
+    await boek([statiegeldTerugEvent(f.bewoner, f.aantal, ctx.data.periode.id, nu())]);
+    toon(`Geboekt: statiegeld −${kratten(f.aantal)} op ${ctx.hulp.naam(f.bewoner)}`, 'ok');
+    ctx.ui.formulier.sg = undefined;
+  },
+
+  // correcties
+  corrKies: ({ bewoner: b, product: p }) => {
+    const f = corrFormulier();
+    if (b) f.bewoner = b;
+    if (p) f.product = p;
+  },
+  corrStap: ({ delta }) => {
+    const f = corrFormulier();
+    f.delta += Number(delta);
+    if (f.delta === 0) f.delta = Number(delta);
+  },
+  correctieBoeken: async () => {
+    const f = corrFormulier();
+    if (!f.bewoner || !f.product) return;
+    await boek([correctieEvent(f.bewoner, f.product, f.delta, ctx.data.periode.id, nu())]);
+    toon(`Correctie geboekt: ${ctx.hulp.naam(f.bewoner)} ${f.delta > 0 ? '+' : '−'}${Math.abs(f.delta)} ${ctx.hulp.productNaam(f.product).toLowerCase()}`, 'ok');
+    ctx.ui.formulier.corr = undefined;
+  },
+
+  // logboek
+  logPeriode: async ({ waarde }) => {
+    const f = ctx.ui.formulier;
+    f.logPeriode = waarde;
+    f.logEvents = waarde === ctx.data.periode.id ? undefined : await store.eventsVanPeriode(waarde);
+  },
+
+  // pincode & koppeling
+  pinWijzigen: async () => {
+    const a = lees('pin-nieuw');
+    const b = lees('pin-herhaal');
+    if (!/^\d{4}$/.test(a)) { toon('De pincode moet uit 4 cijfers bestaan', 'fout'); return; }
+    if (a !== b) { toon('De twee pincodes zijn niet gelijk', 'fout'); return; }
+    const zout = crypto.randomUUID();
+    await zet('pinZout', zout);
+    await zet('pinHash', await hashPin(a, zout));
+    await zet('pinIsStandaard', false);
+    toon('Pincode gewijzigd', 'ok');
+  },
+  koppelingOpslaan: async () => {
+    const url = lees('kop-url');
+    const sleutel = lees('kop-sleutel');
+    await zet('scriptUrl', url || null);
+    await zet('sleutel', sleutel || null);
+    if (!url) { ctx.ui.formulier.kopStatus = { ok: false, tekst: 'Koppeling verwijderd' }; return; }
+    try {
+      await stuur(url, sleutel, 'ping');
+      ctx.ui.formulier.kopStatus = { ok: true, tekst: 'Verbonden' };
+      await store.zetInstelling('stamdataVuil', true);
+      probeerSync();
+    } catch (err) {
+      ctx.ui.formulier.kopStatus = { ok: false, tekst: `Niet verbonden: ${err?.message ?? err}` };
+    }
+  },
+  syncNu: async () => {
+    if (!ctx.data.instellingen.scriptUrl) { toon('Vul eerst de script-URL en sleutel in', 'fout'); return; }
+    const ok = await synchroniseerAlles();
+    toon(ok ? 'Alles gesynchroniseerd' : `Synchroniseren mislukt: ${ctx.data.instellingen.syncFout}`, ok ? 'ok' : 'fout');
+  },
+});
+
+function sgFormulier() {
+  return (ctx.ui.formulier.sg ??= { bewoner: null, aantal: 1 });
+}
+
+function corrFormulier() {
+  return (ctx.ui.formulier.corr ??= { bewoner: null, product: ctx.hulp.standaardProduct()?.id, delta: -1 });
+}
+
+// Sync herhalen tot de wachtrij leeg is (max. 10 rondes).
+async function synchroniseerAlles() {
+  for (let i = 0; i < 10; i++) {
+    while (syncBezig) await new Promise((r) => setTimeout(r, 200));
+    if (!(await probeerSync())) return false;
+    if (!ctx.data.events.some((e) => !e.synced)) return true;
+  }
+  return false;
+}
+
 // ---------- weergave ----------
 
 export function render() {
@@ -246,14 +460,23 @@ export function render() {
 
 let actieBezig = false;
 
-async function opKlik(ev) {
+function opKlik(ev) {
   const el = ev.target.closest('[data-actie]');
-  if (!el || el.disabled || actieBezig) return;
-  const actie = ACTIES[el.dataset.actie];
-  if (!actie) return;
+  if (!el || el.disabled) return;
+  voerUit(el.dataset.actie, { ...el.dataset });
+}
+
+function opWijzig(ev) {
+  const el = ev.target.closest('[data-wijzig]');
+  if (el) voerUit(el.dataset.wijzig, { ...el.dataset, waarde: el.value });
+}
+
+async function voerUit(naam, args) {
+  const actie = ACTIES[naam];
+  if (!actie || actieBezig) return;
   actieBezig = true;
   try {
-    await actie({ ...el.dataset });
+    await actie(args);
   } catch (err) {
     console.error(err);
     toon(`Fout: ${err?.message ?? err}`, 'fout');
@@ -317,6 +540,7 @@ async function start() {
     return;
   }
   app.addEventListener('click', opKlik);
+  app.addEventListener('change', opWijzig);
   for (const t of ['pointerdown', 'keydown', 'input']) document.addEventListener(t, () => { laatsteAanraking = Date.now(); }, true);
   setInterval(tik, 1000);
   setInterval(probeerSync, SYNC_MS);
