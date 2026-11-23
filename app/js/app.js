@@ -1,11 +1,15 @@
 import * as store from './store.js';
 import { berekenStand, dagStart } from './domain.js';
-import { nieuwId, streepEvents, ongedaanEvent, voorraadEvent, periodeStartEvent } from './events.js';
+import { nieuwId, streepEvents, ongedaanEvent, voorraadEvent, periodeStartEvent, donatieEvent } from './events.js';
 import { voegToe, haalAf } from './bestelling.js';
-import { hashPin, STANDAARD_PIN } from './pin.js';
+import { hashPin, pogingToegestaan, registreerPoging, STANDAARD_PIN } from './pin.js';
 import { stuur, syncWachtrij } from './sync.js';
-import { melding } from './ui/html.js';
+import { kratten } from './tekst.js';
+import { melding, bovenbalk, terugKnop } from './ui/html.js';
 import * as hoofdscherm from './ui/hoofdscherm.js';
+import * as krat from './ui/krat.js';
+import * as overzicht from './ui/overzicht.js';
+import * as pinScherm from './ui/pin.js';
 
 const MELDING_SEC = 15;
 const STIL_HOOFD_MS = 30000;
@@ -14,7 +18,13 @@ const STIL_INSTELLINGEN_MS = 120000;
 const SYNC_MS = 30000;
 const INSTELLING_SLEUTELS = ['scriptUrl', 'sleutel', 'laatsteSync', 'syncFout', 'pinZout', 'pinHash', 'pinIsStandaard', 'pinGuard'];
 
-const SCHERMEN = { hoofd: hoofdscherm };
+const SCHERMEN = {
+  hoofd: hoofdscherm,
+  krat,
+  overzicht,
+  pin: pinScherm,
+  instellingen: { render: (c) => bovenbalk(c, terugKnop('Vergrendelen')) }, // volgt in taak 8
+};
 
 // ---------- toestand ----------
 
@@ -167,7 +177,59 @@ const ACTIES = {
     naarHoofd();
     ctx.ui.scherm = scherm;
   },
+
+  // krat bijzetten
+  kiesDonor: ({ bewoner }) => { kratFormulier().donor = bewoner; },
+  kratAantal: ({ delta }) => {
+    const f = kratFormulier();
+    f.aantal = Math.min(10, Math.max(1, f.aantal + Number(delta)));
+  },
+  bijzetten: async () => {
+    const f = kratFormulier();
+    const product = ctx.hulp.actieveProducten().find((p) => p.doneren);
+    if (!f.donor || !product) return;
+    const e = donatieEvent(f.donor, product.id, f.aantal, ctx.data.periode.id, nu());
+    const tekst = `Bijgezet: ${kratten(f.aantal)} ${product.naam.toLowerCase()} door ${ctx.hulp.naam(f.donor)}`;
+    naarHoofd();
+    ctx.ui.melding = { tekst, sec: MELDING_SEC, groepIds: [e.id] };
+    await boek([e]);
+  },
+
+  // pincode
+  pinToets: async ({ toets }) => {
+    const f = ctx.ui.formulier;
+    f.pin ??= '';
+    if (toets === 'annuleer') { naarHoofd(); return; }
+    if (toets === 'wis') { f.pin = f.pin.slice(0, -1); f.pinFout = null; return; }
+    if (f.pin.length >= 4) return;
+    f.pin += toets;
+    f.pinFout = null;
+    if (f.pin.length < 4) return;
+    const inst = ctx.data.instellingen;
+    const t = Date.now();
+    if (!pogingToegestaan(inst.pinGuard, t)) {
+      f.pin = '';
+      f.pinFout = `Te veel pogingen — wacht nog ${Math.ceil((inst.pinGuard.geblokkeerdTot - t) / 1000)} s`;
+      return;
+    }
+    const goed = (await hashPin(f.pin, inst.pinZout)) === inst.pinHash;
+    await zet('pinGuard', registreerPoging(inst.pinGuard, goed, t));
+    if (goed) {
+      naarHoofd();
+      ctx.ui.scherm = 'instellingen';
+      ctx.ui.tab = 'bewoners';
+    } else {
+      f.pin = '';
+      f.pinFout = ctx.data.instellingen.pinGuard.geblokkeerdTot
+        ? `Te veel pogingen — wacht nog ${Math.ceil((ctx.data.instellingen.pinGuard.geblokkeerdTot - t) / 1000)} s`
+        : 'Onjuiste pincode';
+    }
+  },
 };
+
+function kratFormulier() {
+  return (ctx.ui.formulier.krat ??= { donor: null, aantal: 1 });
+}
 
 // ---------- weergave ----------
 
